@@ -1,0 +1,11 @@
+{
+  "type": "code",
+  "modid": "omok",
+  "name": "Omok",
+  "author": "Aculem",
+  "description": "Adds additional functionality to chairs and the Omok block",
+  "version": "0.1.0",
+  "dependency": {
+    "game": ""
+  }
+}
