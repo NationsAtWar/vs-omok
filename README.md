@@ -8,4 +8,4 @@ Right now the only Omok block with functionality is in a new block, the only way
 
 Sneak click to place it, then right click the empty spots on the board to place pieces.
 
-This is an alpha version, I'll continue to update it throughout the week. May not work in multiplayer servers yet.
+This is an alpha version, I'll continue to update it throughout the week. Let me know if it works on multiplayer servers yet.
