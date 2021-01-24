@@ -85,7 +85,7 @@
     <None Include="assets\omok\itemtypes\itemomok.json" />
     <None Include="assets\omok\itemtypes\omokworkitem.json" />
     <None Include="assets\omok\lang\en.json" />
-    <None Include="releases\omok_v0.1.0.zip" />
+    <None Include="releases\omok_v0.2.0.zip" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
