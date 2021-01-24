@@ -2,6 +2,7 @@
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
+using Vintagestory.API.Util;
 
 namespace AculemMods {
 
@@ -16,31 +17,80 @@ namespace AculemMods {
         private bool whitesTurn = false;
         private bool gameIsOver = false;
 
-        public RendererOmok OmokRenderer { get => omokRenderer; set => omokRenderer = value; }
+        private int testInt = 10;
+
+        public RendererOmok OmokRenderer { get => omokRenderer; }
         public bool[,] PlacedWhitePieces { get => placedWhitePieces; }
         public bool[,] PlacedBlackPieces { get => placedBlackPieces; }
-        public bool WhitesTurn { get => whitesTurn; set => whitesTurn = value; }
+        public bool WhitesTurn { get => whitesTurn; }
         public bool GameIsOver { get => gameIsOver; }
 
+        public BEOmokTableTop() : base() { }
+
         public override void Initialize(ICoreAPI api) {
+
+            base.Initialize(api);
 
             if (api is ICoreClientAPI capi) {
 
                 cAPI = capi;
                 omokRenderer = RegisterRenderer();
-            }
 
-            base.Initialize(api);
+                omokRenderer.LoadPlacedMovesMesh(capi, PlacedWhitePieces, true);
+                omokRenderer.LoadPlacedMovesMesh(capi, PlacedBlackPieces, false);
+            }
         }
 
         public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve) {
 
             base.FromTreeAttributes(tree, worldAccessForResolve);
+
+            byte[] deserializedWhitePieces = tree.GetBytes("placedWhitePieces");
+            byte[] deserializedBlackPieces = tree.GetBytes("placedBlackPieces");
+
+            whitesTurn = tree.GetBool("whitesTurn", whitesTurn);
+            gameIsOver = tree.GetBool("gameIsOver", gameIsOver);
+
+            if (deserializedWhitePieces == null || deserializedBlackPieces == null)
+                return;
+
+            placedWhitePieces = PostserializePieces(SerializerUtil.Deserialize<bool[]>(deserializedWhitePieces));
+            placedBlackPieces = PostserializePieces(SerializerUtil.Deserialize<bool[]>(deserializedBlackPieces));
         }
 
         public override void ToTreeAttributes(ITreeAttribute tree) {
 
             base.ToTreeAttributes(tree);
+
+            byte[] serializedWhitePieces = SerializerUtil.Serialize<bool[]>(PreserializePieces(placedWhitePieces));
+            byte[] serializedBlackPieces = SerializerUtil.Serialize<bool[]>(PreserializePieces(placedBlackPieces));
+
+            tree.SetBytes("placedWhitePieces", serializedWhitePieces);
+            tree.SetBytes("placedBlackPieces", serializedBlackPieces);
+            tree.SetBool("whitesTurn", whitesTurn);
+            tree.SetBool("gameIsOver", gameIsOver);
+        }
+
+        private bool[] PreserializePieces(bool[,] piecesToPreserialize) {
+
+            bool[] preserializedPieces = new bool[81];
+
+            for (int x = 0; x < 9; x++)
+                for (int y = 0; y < 9; y++)
+                    preserializedPieces[x * 9 + y] = piecesToPreserialize[x, y];
+
+            return preserializedPieces;
+        }
+
+        private bool[,] PostserializePieces(bool[] piecesToPostserialize) {
+
+            bool[,] postserializedPieces = new bool[9,9];
+
+            for (int x = 0; x < 9; x++)
+                for (int y = 0; y < 9; y++)
+                    postserializedPieces[x,y] = piecesToPostserialize[x * 9 + y];
+
+            return postserializedPieces;
         }
 
         public override void GetBlockInfo(IPlayer forPlayer, StringBuilder sb) {
@@ -50,7 +100,7 @@ namespace AculemMods {
 
         private RendererOmok RegisterRenderer() {
 
-            cAPI.Event.RegisterRenderer(OmokRenderer = new RendererOmok(Pos, cAPI), EnumRenderStage.Opaque);
+            cAPI.Event.RegisterRenderer(omokRenderer = new RendererOmok(Pos, cAPI), EnumRenderStage.Opaque);
             return OmokRenderer;
         }
 

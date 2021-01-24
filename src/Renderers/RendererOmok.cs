@@ -1,7 +1,9 @@
 ﻿using System;
 using Vintagestory.API.Client;
+using Vintagestory.API.Common;
 using Vintagestory.API.Common.Entities;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Util;
 
 namespace AculemMods {
 
@@ -32,6 +34,138 @@ namespace AculemMods {
 
             cAPI = api;
             boardPos = blockPos;
+        }
+
+        public void LoadAvailableMovesMesh(ICoreClientAPI cAPI, IPlayer byPlayer, BlockPos blockPos, int pieceX, int pieceZ) {
+
+            IBlockAccessor blockAccessor = byPlayer.Entity.World.BlockAccessor;
+            BlockSelection blockSelection = cAPI.World.Player.CurrentBlockSelection;
+
+            if (blockSelection == null)
+                return;
+
+            // Player is selecting an Omok Board
+            if (blockAccessor.GetBlock(blockPos) is BlockOmokTableTop) {
+
+                MeshData availableMoveMesh = new MeshData(24, 36, false, false, true, false);
+                availableMoveMesh.SetMode(EnumDrawMode.Lines);
+
+                int greenCol = (156 << 24) | (100 << 16) | (200 << 8) | (100);
+
+                MeshData greenVoxelMesh = LineMeshUtil.GetCube(greenCol);
+
+                for (int i = 0; i < greenVoxelMesh.xyz.Length; i++)
+                    greenVoxelMesh.xyz[i] = greenVoxelMesh.xyz[i] / 32f + 1 / 32f;
+
+                MeshData voxelMeshOffset = greenVoxelMesh.Clone();
+
+                // TODO: Optimize, no need to loop through entire grid
+                for (int x = 3; x < 28; x++) {
+                    int y = 3;
+                    for (int z = 3; z < 28; z++) {
+
+                        if (x % 3 != 0 || z % 3 != 0)
+                            continue;
+
+                        if (pieceX != (x / 3) - 1 || pieceZ != (z / 3) - 1)
+                            continue;
+
+                        float px = x / 32f;
+                        float py = y / 40f + 0.001f;
+                        float pz = z / 32f;
+
+                        for (int i = 0; i < greenVoxelMesh.xyz.Length; i += 3) {
+
+                            voxelMeshOffset.xyz[i] = px + greenVoxelMesh.xyz[i];
+                            voxelMeshOffset.xyz[i + 1] = py + greenVoxelMesh.xyz[i + 1];
+                            voxelMeshOffset.xyz[i + 2] = pz + greenVoxelMesh.xyz[i + 2];
+                        }
+
+                        voxelMeshOffset.Rgba = greenVoxelMesh.Rgba;
+
+                        availableMoveMesh.AddMeshData(voxelMeshOffset);
+                    }
+                }
+
+                if (byPlayer.Entity.World.BlockAccessor.GetBlockEntity(blockPos) is BEOmokTableTop beOmok) {
+
+                    RendererOmok rendererOmok = beOmok.OmokRenderer;
+                    rendererOmok.AvailableMovesMesh?.Dispose();
+                    rendererOmok.AvailableMovesMesh = cAPI.Render.UploadMesh(availableMoveMesh);
+                }
+            }
+        }
+
+        public void LoadPlacedMovesMesh(ICoreClientAPI cAPI, bool[,] placedPieces, bool whitesTurn) {
+
+            MeshData placedMovesMesh = new MeshData(24, 36, false);
+
+            float subPixelPaddingx = cAPI.BlockTextureAtlas.SubPixelPaddingX;
+            float subPixelPaddingy = cAPI.BlockTextureAtlas.SubPixelPaddingY;
+
+            TextureAtlasPosition tpos = cAPI.BlockTextureAtlas.UnknownTexturePosition;
+            MeshData singleVoxelMesh = CubeMeshUtil.GetCubeOnlyScaleXyz(1 / 32f, 1 / 32f, new Vec3f(1 / 32f, 1 / 32f, 1 / 32f));
+            singleVoxelMesh.Rgba = new byte[6 * 4 * 4].Fill((byte)255);
+            CubeMeshUtil.SetXyzFacesAndPacketNormals(singleVoxelMesh);
+
+            for (int i = 0; i < singleVoxelMesh.Uv.Length; i++) {
+                if (i % 2 > 0) {
+                    singleVoxelMesh.Uv[i] = tpos.y1 + singleVoxelMesh.Uv[i] * 2f / cAPI.BlockTextureAtlas.Size.Height - subPixelPaddingy;
+                } else {
+                    singleVoxelMesh.Uv[i] = tpos.x1 + singleVoxelMesh.Uv[i] * 2f / cAPI.BlockTextureAtlas.Size.Width - subPixelPaddingx;
+                }
+            }
+
+            singleVoxelMesh.XyzFaces = (byte[])CubeMeshUtil.CubeFaceIndices.Clone();
+            singleVoxelMesh.XyzFacesCount = 6;
+
+            singleVoxelMesh.SeasonColorMapIds = new byte[6];
+            singleVoxelMesh.ClimateColorMapIds = new byte[6];
+            singleVoxelMesh.ColorMapIdsCount = 6;
+
+            MeshData voxelMeshOffset = singleVoxelMesh.Clone();
+
+            for (int x = 1; x < 10; x++) {
+                for (int y = 2; y < 3; y++) {
+                    for (int z = 1; z < 10; z++) {
+
+                        if (!placedPieces[x - 1, z - 1])
+                            continue;
+
+                        float px = x / 16f * 1.5f;
+                        float py = y / 24f;
+                        float pz = z / 16f * 1.5f;
+
+                        for (int i = 0; i < singleVoxelMesh.xyz.Length; i += 3) {
+
+                            voxelMeshOffset.xyz[i] = px + singleVoxelMesh.xyz[i];
+                            voxelMeshOffset.xyz[i + 1] = py + singleVoxelMesh.xyz[i + 1];
+                            voxelMeshOffset.xyz[i + 2] = pz + singleVoxelMesh.xyz[i + 2];
+                        }
+
+                        float offsetX = ((((x + 4 * y) % 16f / 16f)) * 32f) / cAPI.BlockTextureAtlas.Size.Width;
+                        float offsetY = (pz * 32f) / cAPI.BlockTextureAtlas.Size.Height;
+
+                        for (int i = 0; i < singleVoxelMesh.Uv.Length; i += 2) {
+
+                            voxelMeshOffset.Uv[i] = singleVoxelMesh.Uv[i] + offsetX;
+                            voxelMeshOffset.Uv[i + 1] = singleVoxelMesh.Uv[i + 1] + offsetY;
+                        }
+
+                        placedMovesMesh.AddMeshData(voxelMeshOffset);
+                    }
+                }
+            }
+
+            if (whitesTurn) {
+
+                placedWhiteMovesMesh?.Dispose();
+                placedWhiteMovesMesh = cAPI.Render.UploadMesh(placedMovesMesh);
+            } else {
+
+                placedBlackMovesMesh?.Dispose();
+                placedBlackMovesMesh = cAPI.Render.UploadMesh(placedMovesMesh);
+            }
         }
 
         public void OnRenderFrame(float deltaTime, EnumRenderStage stage) {

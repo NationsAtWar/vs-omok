@@ -47,7 +47,7 @@ namespace AculemMods {
 
         private void OnPlayerJoin(IServerPlayer byPlayer) {
 
-            playerManager.AddPlayer((IPlayer) byPlayer);
+            playerManager.AddPlayer(byPlayer);
         }
 
         private void OnMouseMove(MouseEvent e) {
