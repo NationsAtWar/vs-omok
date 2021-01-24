@@ -13,11 +13,12 @@ namespace AculemMods {
 
                 BlockPos blockPos = blockSel.Position;
                 BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(blockPos);
-                RendererOmok renderer = beOmok.OmokRenderer;
 
                 // Load available space mesh if the looked at spot is free
                 if (beOmok == null || !IsViableSpace(beOmok, blockSel, out int pieceX, out int pieceZ))
                     return;
+
+                RendererOmok renderer = beOmok.OmokRenderer;
 
                 // Store Selected Omok Board Position
                 PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
@@ -33,11 +34,12 @@ namespace AculemMods {
 
             BlockPos blockPos = blockSel.Position;
             BEOmokTableTop beOmok = (BEOmokTableTop) api.World.BlockAccessor.GetBlockEntity(blockPos);
-            RendererOmok renderer = beOmok.OmokRenderer;
 
             // Continue if the clicked spot is a move that makes sense
             if (beOmok == null || !IsViableSpace(beOmok, blockSel, out int pieceX, out int pieceZ))
                 return false;
+
+            RendererOmok renderer = beOmok.OmokRenderer;
 
             bool whitesTurn = beOmok.WhitesTurn;
 
@@ -79,7 +81,9 @@ namespace AculemMods {
             if (api is ICoreClientAPI cAPI) {
 
                 BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(pos);
-                beOmok.OmokRenderer.Destroy();
+
+                if (beOmok != null)
+                    beOmok.OmokRenderer.Destroy();
             }
             
             base.OnBlockRemoved(world, pos);
