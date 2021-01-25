@@ -22,16 +22,23 @@ namespace AculemMods {
             else
                 PlayerSitDown(world, byPlayer, blockSel.Position);
 
-            world.Logger.Debug("Players: " + PlayerManager.Instance.GetPlayerData(byPlayer).IsPlayerSitting());
-
             return base.OnBlockInteractStart(world, byPlayer, blockSel);
         }
 
         public override void OnBlockPlaced(IWorldAccessor world, BlockPos blockPos, ItemStack byItemStack = null) {
 
             // TODO: Tuck/face table if applicable
-            world.Logger.Error("Chair placed");
             base.OnBlockPlaced(world, blockPos, byItemStack);
+        }
+
+        public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1) {
+
+            PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
+
+            if (playerData.SatChairPos == pos && playerData.IsPlayerSitting())
+                playerData.TogglePlayerSitting();
+
+            base.OnBlockBroken(world, pos, byPlayer, dropQuantityMultiplier);
         }
 
         private void PlayerSitDown(IWorldAccessor world, IPlayer byPlayer, BlockPos chairPosition) {
@@ -48,6 +55,7 @@ namespace AculemMods {
 
             // Set player's status to sitting
             playerData.TogglePlayerSitting();
+            playerData.SatChairPos = chairPosition;
 
             // If there is a table next to chair, set player to face chair
             BlockPos adjacentTable = GetAdjacentTable(world, chairPosition);

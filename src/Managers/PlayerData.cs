@@ -9,8 +9,10 @@ namespace AculemMods {
         private Cardinal sittingDirection = Cardinal.NorthWest;
 
         private BlockPos selectedOmokBoardPos;
+        private BlockPos satChairPos;
 
         public BlockPos SelectedOmokBoardPos { get => selectedOmokBoardPos; set => selectedOmokBoardPos = value; }
+        public BlockPos SatChairPos { get => satChairPos; set => satChairPos = value; }
 
         public PlayerData(string playerUID) {
 
