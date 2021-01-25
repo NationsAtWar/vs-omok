@@ -74,7 +74,7 @@
     <Compile Include="src\BlockEntities\BEOmokTableTop.cs" />
     <Compile Include="src\Blocks\BlockChair.cs" />
     <Compile Include="src\Blocks\BlockOmokTableTop.cs" />
-    <Compile Include="src\Items\ItemOmok.cs" />
+    <Compile Include="src\GUI\GUIDialogOmokTable.cs" />
     <Compile Include="src\Managers\PlayerData.cs" />
     <Compile Include="src\Managers\PlayerManager.cs" />
     <Compile Include="src\Omok.cs" />
@@ -82,8 +82,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\omok\blocktypes\blockomoktabletop.json" />
-    <None Include="assets\omok\itemtypes\itemomok.json" />
-    <None Include="assets\omok\itemtypes\omokworkitem.json" />
     <None Include="assets\omok\lang\en.json" />
     <None Include="releases\omok_v0.2.0.zip" />
   </ItemGroup>

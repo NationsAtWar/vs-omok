@@ -1,5 +1,10 @@
 {
   "item-itemomok": "Omok Table (Item)",
   "item-omokworkitem": "Omok Work Item (Item)",
-  "block-blockomok": "Omok Table (Block)"
+  "block-blockomok": "Omok Table (Block)",
+
+  "blockhelp-blacksturn": "Black's turn",
+  "blockhelp-whitesturn": "White's turn",
+  "blockhelp-blackwins": "Black won the game!",
+  "blockhelp-whitewins": "White won the game!"
 }

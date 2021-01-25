@@ -1,0 +1,20 @@
+[
+  {
+    "op": "add",
+    "path": "/class",
+    "value": "blockomoktabletop",
+    "file": "game:blocktypes/wood/generic/omoktabletop"
+  },
+  {
+    "op": "add",
+    "path": "/entityClass",
+    "value": "beomoktabletop",
+    "file": "game:blocktypes/wood/generic/omoktabletop"
+  },
+  {
+    "op": "add",
+    "path": "/class",
+    "value": "blockchair",
+    "file": "game:blocktypes/wood/generic/chair"
+  }
+]

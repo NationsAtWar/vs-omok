@@ -29,7 +29,6 @@ namespace AculemMods {
 
             api.RegisterBlockClass("blockomoktabletop", typeof(BlockOmokTableTop));
             api.RegisterBlockEntityClass("beomoktabletop", typeof(BEOmokTableTop));
-            api.RegisterItemClass("itemomok", typeof(ItemOmok));
         }
         
         public override void StartServerSide(ICoreServerAPI api) {
@@ -43,6 +42,7 @@ namespace AculemMods {
             clientAPI = api;
 
             clientAPI.Event.MouseMove += OnMouseMove;
+            clientAPI.Event.KeyDown += OnKeyDown;
         }
 
         private void OnPlayerJoin(IServerPlayer byPlayer) {
@@ -57,6 +57,21 @@ namespace AculemMods {
 
                 UpdateOmokBoard();
                 SittingLogic(e);
+            }
+        }
+
+        private void OnKeyDown(KeyEvent e) {
+
+            // Only executed on client
+            if (clientAPI != null) {
+
+                int pressedKeyCode = e.KeyCode;
+                int selectKeyCode = clientAPI.Input.GetHotKeyByCode("toolmodeselect").CurrentMapping.KeyCode;
+
+                BEOmokTableTop beOmok = GetSelectedBEOmok();
+
+                if (beOmok != null && pressedKeyCode == selectKeyCode && !beOmok.GuiDialog.IsOpened())
+                    beOmok.GuiDialog.TryOpen();
             }
         }
 
@@ -78,7 +93,7 @@ namespace AculemMods {
                 if (player.Entity.World.BlockAccessor.GetBlockEntity(selectedOmokBoardPos) is BEOmokTableTop beOmok) {
 
                     RendererOmok rendererOmok = beOmok.OmokRenderer;
-                    if (rendererOmok != null)
+                    if (rendererOmok != null && rendererOmok.AvailableMovesMesh != null && !rendererOmok.AvailableMovesMesh.Disposed)
                         rendererOmok.DisposeAvailableMovesMesh();
                 }
             }
@@ -118,6 +133,24 @@ namespace AculemMods {
                     // TODO: Add DeltaY movement to player's pitch
                 }
             }
+        }
+
+        private BEOmokTableTop GetSelectedBEOmok() {
+            
+            IPlayer player = clientAPI.World.Player;
+            PlayerData playerData = PlayerManager.Instance.GetPlayerData(player);
+
+            BlockPos selectedOmokBoardPos = playerData.SelectedOmokBoardPos;
+            bool isSelectingBlock = (player.CurrentBlockSelection != null);
+
+            if (selectedOmokBoardPos == null)
+                return null;
+
+            if (isSelectingBlock && player.CurrentBlockSelection.Position == selectedOmokBoardPos)
+                if (player.Entity.World.BlockAccessor.GetBlockEntity(selectedOmokBoardPos) is BEOmokTableTop beOmok)
+                    return beOmok;
+
+            return null;
         }
     }
 

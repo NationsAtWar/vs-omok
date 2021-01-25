@@ -1,10 +1,50 @@
 ﻿using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
+using Vintagestory.API.Server;
+using Vintagestory.API.Util;
 
 namespace AculemMods {
 
     public class BlockOmokTableTop : Block {
+
+        private ICoreAPI api;
+
+        private WorldInteraction helpBlacksTurn;
+        private WorldInteraction helpWhitesTurn;
+        private WorldInteraction helpBlackWon;
+        private WorldInteraction helpWhiteWon;
+
+        public override void OnLoaded(ICoreAPI api) {
+
+            this.api = api;
+
+            helpBlacksTurn = new WorldInteraction() {
+
+                ActionLangCode = "omok:blockhelp-blacksturn",
+                MouseButton = EnumMouseButton.None
+            };
+
+            helpWhitesTurn = new WorldInteraction() {
+
+                ActionLangCode = "omok:blockhelp-whitesturn",
+                MouseButton = EnumMouseButton.None
+            };
+
+            helpBlackWon = new WorldInteraction() {
+
+                ActionLangCode = "omok:blockhelp-blackwins",
+                HotKeyCode = "toolmodeselect",
+                MouseButton = EnumMouseButton.None
+            };
+
+            helpWhiteWon = new WorldInteraction() {
+
+                ActionLangCode = "omok:blockhelp-whitewins",
+                HotKeyCode = "toolmodeselect",
+                MouseButton = EnumMouseButton.None
+            };
+        }
 
         // Loads all available moves
         public override void OnBeingLookedAt(IPlayer byPlayer, BlockSelection blockSel, bool firstTick) {
@@ -14,11 +54,17 @@ namespace AculemMods {
                 BlockPos blockPos = blockSel.Position;
                 BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(blockPos);
 
-                // Load available space mesh if the looked at spot is free
-                if (beOmok == null || !IsViableSpace(beOmok, blockSel, out int pieceX, out int pieceZ))
+                if (beOmok == null)
                     return;
 
                 RendererOmok renderer = beOmok.OmokRenderer;
+
+                // Load available space mesh if the looked at spot is free
+                if (beOmok == null || !IsViableSpace(beOmok, blockSel, out int pieceX, out int pieceZ)) {
+
+                    renderer.DisposeAvailableMovesMesh();
+                    return;
+                }
 
                 // Store Selected Omok Board Position
                 PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
@@ -35,21 +81,53 @@ namespace AculemMods {
             BlockPos blockPos = blockSel.Position;
             BEOmokTableTop beOmok = (BEOmokTableTop) api.World.BlockAccessor.GetBlockEntity(blockPos);
 
-            // Continue if the clicked spot is a move that makes sense
+            // Continue if the clicked spot is an available space
             if (beOmok == null || !IsViableSpace(beOmok, blockSel, out int pieceX, out int pieceZ))
-                return false;
+                return true;
 
-            RendererOmok renderer = beOmok.OmokRenderer;
-
+            // Determine next piece to be placed
             bool whitesTurn = beOmok.WhitesTurn;
+            int piecesPlayed = beOmok.PiecesPlayed();
+
+            // If two player, determine who's playing and whose turn it is before placing a piece
+            if (beOmok.IsTwoPlayer) {
+
+                // Assign ID if it's a player's first turn
+                if (piecesPlayed == 0) // Assign first player
+                    beOmok.FirstPlayerID = byPlayer.PlayerUID;
+
+                else if (piecesPlayed == 1) { // Assign second player
+
+                    // If second player is a new player, assign second player, otherwise return
+                    if (byPlayer.PlayerUID != beOmok.FirstPlayerID)
+                        beOmok.SecondPlayerID = byPlayer.PlayerUID;
+                    else
+                        return false;
+                }
+
+                // Return if it's not the player's turn
+                if (!whitesTurn && byPlayer.PlayerUID != beOmok.FirstPlayerID)
+                    return false;
+
+                if (whitesTurn && byPlayer.PlayerUID != beOmok.SecondPlayerID)
+                    return false;
+            }
 
             if (whitesTurn)
                 beOmok.PlaceWhitePiece(pieceX, pieceZ);
             else
                 beOmok.PlaceBlackPiece(pieceX, pieceZ);
 
+            // Victory Condition Check
+            string victoryText = "";
+
+            if (!beOmok.GameIsOver)
+                victoryText = beOmok.CheckVictoryConditions();
+
             // Reload Available Moves Mesh
             if (world.Side == EnumAppSide.Client) {
+
+                RendererOmok renderer = beOmok.OmokRenderer;
 
                 ICoreClientAPI cAPI = (ICoreClientAPI) api;
 
@@ -59,15 +137,15 @@ namespace AculemMods {
                     renderer.LoadPlacedMovesMesh(cAPI, beOmok.PlacedBlackPieces, false);
 
                 renderer.LoadAvailableMovesMesh(cAPI, byPlayer, blockSel.Position, -1, -1);
+            }
+            
+            if (world.Side == EnumAppSide.Server) {
 
-                // Victory Condition Check
-                if (!beOmok.GameIsOver) {
+                ICoreServerAPI sAPI = (ICoreServerAPI)api;
 
-                    string victory = beOmok.CheckVictoryConditions();
-
-                    if (victory != "" && cAPI != null)
-                        cAPI.SendChatMessage(victory);
-                }
+                if (victoryText != "")
+                    foreach (IPlayer nearbyPlayer in api.World.GetPlayersAround(blockSel.Position.ToVec3d(), 10, 10))
+                        sAPI.SendMessage(nearbyPlayer, 0, victoryText, EnumChatType.OwnMessage);
             }
 
             beOmok.MarkDirty(true);
@@ -89,22 +167,32 @@ namespace AculemMods {
             base.OnBlockRemoved(world, pos);
         }
 
-        /*
-        public override ItemStack OnPickBlock(IWorldAccessor world, BlockPos pos) {
+        public override WorldInteraction[] GetPlacedBlockInteractionHelp(IWorldAccessor world, BlockSelection selection, IPlayer forPlayer) {
 
-            api.Logger.Debug("Hey ooooh");
-
-            // Restart game if middle mouse is clicked
             if (api is ICoreClientAPI cAPI) {
 
-                BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(pos);
-                beOmok.RestartGame();
-                return null;
+                BlockPos blockPos = selection.Position;
+                BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(blockPos);
+
+                // Display helpful text over the board
+                if (beOmok == null)
+                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer);
+
+                else if (beOmok.GameIsOver && beOmok.WhiteWon)
+                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhiteWon);
+
+                else if (beOmok.GameIsOver && !beOmok.WhiteWon)
+                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlackWon);
+
+                else if (beOmok.WhitesTurn)
+                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhitesTurn);
+
+                else if (!beOmok.WhitesTurn)
+                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlacksTurn);
             }
 
-            return base.OnPickBlock(world, pos);
+            return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer);
         }
-        */
 
         private bool IsViableSpace(BEOmokTableTop beOmok, BlockSelection blockSel, out int pieceX, out int pieceZ) {
 

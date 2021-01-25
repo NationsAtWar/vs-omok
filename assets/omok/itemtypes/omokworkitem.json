@@ -1,7 +1,0 @@
-{
-	code: "omokworkitem",
-	sdclass: "game:ItemWorkItem",
-	maxstacksize: 1,
-	texture: { base: "game:item/resource/clay/raw-fireclay" },
-	creativeinventory: { "general": [""], "items": [""] },
-}

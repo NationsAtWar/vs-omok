@@ -216,32 +216,6 @@ namespace AculemMods {
                 rpi.GlToggleBlend(true, EnumBlendMode.Standard);
             }
 
-            if (placedWhiteMovesMesh != null && !placedWhiteMovesMesh.Disposed) {
-
-                IRenderAPI rpi = cAPI.Render;
-                IClientWorldAccessor worldAccess = cAPI.World;
-                Vec3d camPos = worldAccess.Player.Entity.CameraPos;
-
-                Matrixf ModelMat = new Matrixf();
-
-                ModelMat.Identity().Translate(boardPos.X - camPos.X, boardPos.Y - camPos.Y, boardPos.Z - camPos.Z);
-
-                IStandardShaderProgram prog = rpi.PreparedStandardShader(boardPos.X, boardPos.Y, boardPos.Z);
-
-                prog.Use();
-
-                prog.ProjectionMatrix = rpi.CurrentProjectionMatrix;
-                prog.ModelMatrix = ModelMat.Values;
-                prog.ViewMatrix = rpi.CameraMatrixOriginf;
-
-                prog.RgbaLightIn = ColorUtil.WhiteArgbVec;
-                prog.Tex2D = cAPI.BlockTextureAtlas.AtlasTextureIds[0];
-
-                rpi.RenderMesh(placedWhiteMovesMesh);
-
-                prog.Stop();
-            }
-
             if (placedBlackMovesMesh != null && !placedBlackMovesMesh.Disposed) {
 
                 IRenderAPI rpi = cAPI.Render;
@@ -254,6 +228,8 @@ namespace AculemMods {
 
                 IStandardShaderProgram prog = rpi.PreparedStandardShader(boardPos.X, boardPos.Y, boardPos.Z);
 
+                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/blackpiece.png"));
+
                 prog.Use();
 
                 prog.ProjectionMatrix = rpi.CurrentProjectionMatrix;
@@ -261,9 +237,38 @@ namespace AculemMods {
                 prog.ViewMatrix = rpi.CameraMatrixOriginf;
 
                 prog.RgbaLightIn = ColorUtil.BlackArgbVec;
-                prog.Tex2D = 0;
+                prog.Tex2D = textureID;
 
                 rpi.RenderMesh(placedBlackMovesMesh);
+
+                prog.Stop();
+            }
+
+            if (placedWhiteMovesMesh != null && !placedWhiteMovesMesh.Disposed) {
+
+                IRenderAPI rpi = cAPI.Render;
+                IClientWorldAccessor worldAccess = cAPI.World;
+                Vec3d camPos = worldAccess.Player.Entity.CameraPos;
+
+                Matrixf ModelMat = new Matrixf();
+                Vec4f lightrgbs = cAPI.World.BlockAccessor.GetLightRGBs(boardPos.X, boardPos.Y, boardPos.Z);
+
+                ModelMat.Identity().Translate(boardPos.X - camPos.X, boardPos.Y - camPos.Y, boardPos.Z - camPos.Z);
+
+                IStandardShaderProgram prog = rpi.PreparedStandardShader(boardPos.X, boardPos.Y, boardPos.Z);
+
+                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/whitepiece.png"));
+
+                prog.Use();
+
+                prog.ProjectionMatrix = rpi.CurrentProjectionMatrix;
+                prog.ModelMatrix = ModelMat.Values;
+                prog.ViewMatrix = rpi.CameraMatrixOriginf;
+
+                prog.RgbaLightIn = lightrgbs;
+                prog.Tex2D = textureID;
+
+                rpi.RenderMesh(placedWhiteMovesMesh);
 
                 prog.Stop();
             }
