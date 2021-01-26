@@ -1,0 +1,10 @@
+{
+	"ingredientPattern": "SS,PP",
+	"ingredients": {
+		"S": { "type": "item", "code": "game:stone-*" },
+		"P": { "type": "item", "code": "game:plank-*" }
+	},
+	"width": 2,
+	"height": 2,
+	"output": { type: "block", code: "omoktabletop", quantity: 1 }
+}

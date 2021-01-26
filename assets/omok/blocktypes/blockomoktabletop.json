@@ -3,7 +3,7 @@
 	class: "blockomoktabletop",
 	entityClass: "beomoktabletop",
 	shape: { base: "block/omoktabletop" },
-	creativeinventory: { "general": ["*"], "decorative": ["*"] },
+	creativeinventory: { "general": [""], "decorative": [""] },
 	replaceable: 5001,
 	resistance: 0.5,
 	lightAbsorption: 0,

@@ -228,7 +228,7 @@ namespace AculemMods {
 
                 IStandardShaderProgram prog = rpi.PreparedStandardShader(boardPos.X, boardPos.Y, boardPos.Z);
 
-                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/blackpiece.png"));
+                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/block/wood/omoktabletop/blackpiece.png"));
 
                 prog.Use();
 
@@ -257,7 +257,7 @@ namespace AculemMods {
 
                 IStandardShaderProgram prog = rpi.PreparedStandardShader(boardPos.X, boardPos.Y, boardPos.Z);
 
-                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/whitepiece.png"));
+                int textureID = rpi.GetOrLoadTexture(new AssetLocation("textures/block/wood/omoktabletop/whitepiece.png"));
 
                 prog.Use();
 

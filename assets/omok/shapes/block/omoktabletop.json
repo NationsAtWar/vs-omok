@@ -1,7 +1,7 @@
 {
     "textures": {
-        "0": "block/omoktop",
-        "1": "block/omokbottom"
+        "0": "block/wood/omoktabletop/top",
+        "1": "block/wood/omoktabletop/topbottom"
     },
     "elements": [
         {

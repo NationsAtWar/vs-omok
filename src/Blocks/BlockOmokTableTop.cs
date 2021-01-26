@@ -102,15 +102,15 @@ namespace AculemMods {
                     if (byPlayer.PlayerUID != beOmok.FirstPlayerID)
                         beOmok.SecondPlayerID = byPlayer.PlayerUID;
                     else
-                        return false;
+                        return true;
                 }
 
                 // Return if it's not the player's turn
                 if (!whitesTurn && byPlayer.PlayerUID != beOmok.FirstPlayerID)
-                    return false;
+                    return true;
 
                 if (whitesTurn && byPlayer.PlayerUID != beOmok.SecondPlayerID)
-                    return false;
+                    return true;
             }
 
             if (whitesTurn)
