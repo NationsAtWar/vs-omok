@@ -4,7 +4,7 @@
   "name": "Omok",
   "author": "Aculem",
   "description": "Adds additional functionality to chairs and the Omok block",
-  "version": "0.3.2",
+  "version": "0.3.3",
   "dependency": {
     "game": ""
   }

@@ -1,4 +1,5 @@
-﻿using Vintagestory.API.Client;
+﻿using System;
+using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.MathTools;
 using Vintagestory.API.Server;
@@ -124,9 +125,14 @@ namespace AculemMods {
             if (!beOmok.GameIsOver)
                 victoryText = beOmok.CheckVictoryConditions();
 
+            // Play piece setting sound
+            int random = new Random().Next(1, 3);
+            AssetLocation placeSound = new AssetLocation("game:sounds/block/loosestone" + random);
+            world.PlaySoundAt(placeSound, blockPos.X, blockPos.Y, blockPos.Z, byPlayer, true, 10, 1);
+
             // Reload Available Moves Mesh
             if (world.Side == EnumAppSide.Client) {
-
+                
                 RendererOmok renderer = beOmok.OmokRenderer;
 
                 ICoreClientAPI cAPI = (ICoreClientAPI) api;
