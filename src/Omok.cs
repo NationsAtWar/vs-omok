@@ -34,7 +34,7 @@ namespace AculemMods {
         public override void StartServerSide(ICoreServerAPI api) {
 
             serverAPI = api;
-            serverAPI.Event.PlayerJoin += OnPlayerJoin;
+            serverAPI.Event.PlayerJoin += OnPlayerJoinServer;
         }
 
         public override void StartClientSide(ICoreClientAPI api) {
@@ -43,11 +43,17 @@ namespace AculemMods {
 
             clientAPI.Event.MouseMove += OnMouseMove;
             clientAPI.Event.KeyDown += OnKeyDown;
+            clientAPI.Event.PlayerJoin += OnPlayerJoinClient;
         }
 
-        private void OnPlayerJoin(IServerPlayer byPlayer) {
+        private void OnPlayerJoinServer(IServerPlayer byPlayer) {
 
-            playerManager.AddPlayer(byPlayer);
+            playerManager.GetOrAddPlayerData(byPlayer);
+        }
+
+        private void OnPlayerJoinClient(IClientPlayer byPlayer) {
+
+            playerManager.GetOrAddPlayerData(byPlayer);
         }
 
         private void OnMouseMove(MouseEvent e) {
@@ -78,7 +84,7 @@ namespace AculemMods {
         private void UpdateOmokBoard() {
 
             IPlayer player = clientAPI.World.Player;
-            PlayerData playerData = PlayerManager.Instance.GetPlayerData(player);
+            PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(player);
 
             // Update renderer if no longer looking at Omok board
             BlockPos selectedOmokBoardPos = playerData.SelectedOmokBoardPos;
@@ -102,7 +108,7 @@ namespace AculemMods {
         private void SittingLogic(MouseEvent e) {
 
             IPlayer player = clientAPI.World.Player;
-            PlayerData playerData = PlayerManager.Instance.GetPlayerData(player);
+            PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(player);
 
             // Only executed when player is sitting
             if (!playerData.IsPlayerSitting() || clientAPI.World.Player.CameraMode.Equals(EnumCameraMode.Overhead))
@@ -138,7 +144,7 @@ namespace AculemMods {
         private BEOmokTableTop GetSelectedBEOmok() {
             
             IPlayer player = clientAPI.World.Player;
-            PlayerData playerData = PlayerManager.Instance.GetPlayerData(player);
+            PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(player);
 
             BlockPos selectedOmokBoardPos = playerData.SelectedOmokBoardPos;
             bool isSelectingBlock = (player.CurrentBlockSelection != null);
@@ -170,10 +176,17 @@ namespace AculemMods {
                 EntityControls controls = entityPlayer.Controls;
                 string playerUID = entity.WatchedAttributes.GetString("playerUID");
                 IPlayer player = entity.World.PlayerByUid(playerUID);
-                PlayerData playerData = PlayerManager.Instance.GetPlayerData(player);
+
+                if (PlayerManager.Instance == null)
+                    return;
+
+                if (player == null)
+                    return;
+
+                PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(player);
 
                 // Sitting Logic
-                if (playerData.IsPlayerSitting()) {
+                if (playerData != null && playerData.IsPlayerSitting()) {
 
                     // Disable Movement
                     controls.StopAllMovement();

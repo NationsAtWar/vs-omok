@@ -2,6 +2,7 @@
 using Vintagestory.API.Client;
 using Vintagestory.API.Common;
 using Vintagestory.API.Datastructures;
+using Vintagestory.API.Server;
 using Vintagestory.API.Util;
 
 namespace AculemMods {
@@ -9,6 +10,7 @@ namespace AculemMods {
     public class BEOmokTableTop : BlockEntity {
 
         private ICoreClientAPI cAPI;
+        private ICoreServerAPI sAPI;
         private RendererOmok omokRenderer;
 
         private GuiDialog guiDialog;
@@ -39,7 +41,8 @@ namespace AculemMods {
         private enum EnumPacketType {
 
             StartOnePlayer,
-            StartTwoPlayer
+            StartTwoPlayer,
+            UpdateRenderer
         }
 
         public BEOmokTableTop() : base() { }
@@ -58,6 +61,9 @@ namespace AculemMods {
 
                 guiDialog = new GUIDialogOmokTable("guiomoktable-" + Pos.X + "," + Pos.Y + "," + Pos.Z, Pos, cAPI, this);
             }
+
+            if (api is ICoreServerAPI sapi)
+                sAPI = sapi;
         }
 
         public override void FromTreeAttributes(ITreeAttribute tree, IWorldAccessor worldAccessForResolve) {
@@ -67,14 +73,22 @@ namespace AculemMods {
             byte[] deserializedWhitePieces = tree.GetBytes("placedWhitePieces");
             byte[] deserializedBlackPieces = tree.GetBytes("placedBlackPieces");
 
+            firstPlayerID = tree.GetString("firstPlayerID", firstPlayerID);
+            secondPlayerID = tree.GetString("secondPlayerID", secondPlayerID);
+            isTwoPlayer = tree.GetBool("isTwoPlayer", isTwoPlayer);
             whitesTurn = tree.GetBool("whitesTurn", whitesTurn);
+            whiteWon = tree.GetBool("whiteWon", whiteWon);
             gameIsOver = tree.GetBool("gameIsOver", gameIsOver);
+
+            UpdateClients();
 
             if (deserializedWhitePieces == null || deserializedBlackPieces == null)
                 return;
 
             placedWhitePieces = PostserializePieces(SerializerUtil.Deserialize<bool[]>(deserializedWhitePieces));
             placedBlackPieces = PostserializePieces(SerializerUtil.Deserialize<bool[]>(deserializedBlackPieces));
+
+            UpdateClients();
         }
 
         public override void ToTreeAttributes(ITreeAttribute tree) {
@@ -86,7 +100,11 @@ namespace AculemMods {
 
             tree.SetBytes("placedWhitePieces", serializedWhitePieces);
             tree.SetBytes("placedBlackPieces", serializedBlackPieces);
+            tree.SetString("firstPlayerID", firstPlayerID);
+            tree.SetString("secondPlayerID", secondPlayerID);
+            tree.SetBool("isTwoPlayer", isTwoPlayer);
             tree.SetBool("whitesTurn", whitesTurn);
+            tree.SetBool("whiteWon", whiteWon);
             tree.SetBool("gameIsOver", gameIsOver);
         }
 
@@ -126,12 +144,14 @@ namespace AculemMods {
         public void PlaceWhitePiece(int xPos, int zPos) {
 
             placedWhitePieces[xPos, zPos] = true;
+            UpdateClients();
             whitesTurn = false;
         }
 
         public void PlaceBlackPiece(int xPos, int zPos) {
 
             placedBlackPieces[xPos, zPos] = true;
+            UpdateClients();
             whitesTurn = true;
         }
 
@@ -198,15 +218,11 @@ namespace AculemMods {
 
         public override void OnReceivedClientPacket(IPlayer fromPlayer, int packetid, byte[] data) {
 
-            if (packetid == (int)EnumPacketType.StartOnePlayer) {
-
+            if (packetid == (int)EnumPacketType.StartOnePlayer)
                 RestartGame(false);
-            }
 
-            else if (packetid == (int)EnumPacketType.StartTwoPlayer) {
-
+            else if (packetid == (int)EnumPacketType.StartTwoPlayer)
                 RestartGame(true);
-            }
 
             base.OnReceivedClientPacket(fromPlayer, packetid, data);
         }
@@ -225,30 +241,51 @@ namespace AculemMods {
 
         public void RestartGame(bool twoPlayerGame) {
 
-            for (int x = 0; x < 9; x++)
-                for (int y = 0; y < 9; y++) {
+            if (sAPI != null) {
 
-                    placedWhitePieces[x, y] = false;
-                    placedBlackPieces[x, y] = false;
-                }
+                for (int x = 0; x < 9; x++)
+                    for (int y = 0; y < 9; y++) {
 
-            gameIsOver = false;
-            whitesTurn = false;
+                        placedWhitePieces[x, y] = false;
+                        placedBlackPieces[x, y] = false;
+                    }
 
-            if (twoPlayerGame)
-                isTwoPlayer = true;
-            else
-                isTwoPlayer = false;
+                gameIsOver = false;
+                whitesTurn = false;
 
-            if (cAPI != null && cAPI.Side == EnumAppSide.Client) {
+                if (twoPlayerGame)
+                    isTwoPlayer = true;
+                else
+                    isTwoPlayer = false;
+
+                MarkDirty(true);
+            }
+
+            if (cAPI != null) {
 
                 omokRenderer.Dispose();
-                MarkDirty(true);
 
                 if (twoPlayerGame)
                     cAPI.Network.SendBlockEntityPacket(Pos.X, Pos.Y, Pos.Z, (int)EnumPacketType.StartTwoPlayer);
                 else
                     cAPI.Network.SendBlockEntityPacket(Pos.X, Pos.Y, Pos.Z, (int)EnumPacketType.StartOnePlayer);
+            }
+        }
+
+        public void UpdateClients() {
+
+            if (sAPI != null)
+                MarkDirty(true);
+
+            if (cAPI != null) {
+
+                IPlayer clientPlayer;
+
+                clientPlayer = cAPI.World.Player;
+                OmokRenderer.LoadPlacedMovesMesh(cAPI, placedWhitePieces, true);
+                OmokRenderer.LoadPlacedMovesMesh(cAPI, placedBlackPieces, false);
+
+                OmokRenderer.LoadAvailableMovesMesh(cAPI, clientPlayer, Pos, -1, -1);
             }
         }
     }

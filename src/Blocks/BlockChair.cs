@@ -15,7 +15,7 @@ namespace AculemMods {
 
         public override bool OnBlockInteractStart(IWorldAccessor world, IPlayer byPlayer, BlockSelection blockSel) {
 
-            bool isSitting = playerManager.GetPlayerData(byPlayer).IsPlayerSitting();
+            bool isSitting = playerManager.GetOrAddPlayerData(byPlayer).IsPlayerSitting();
 
             if (isSitting)
                 PlayerStandUp(byPlayer);
@@ -33,7 +33,7 @@ namespace AculemMods {
 
         public override void OnBlockBroken(IWorldAccessor world, BlockPos pos, IPlayer byPlayer, float dropQuantityMultiplier = 1) {
 
-            PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
+            PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(byPlayer);
 
             if (playerData.SatChairPos == pos && playerData.IsPlayerSitting())
                 playerData.TogglePlayerSitting();
@@ -43,7 +43,7 @@ namespace AculemMods {
 
         private void PlayerSitDown(IWorldAccessor world, IPlayer byPlayer, BlockPos chairPosition) {
 
-            PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
+            PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(byPlayer);
 
             // Sets the player to the center of the chair
             Vec3d centerOfChair = chairPosition.ToVec3d().Add(0.5, 0.5, 0.5);
@@ -112,7 +112,7 @@ namespace AculemMods {
             byPlayer.WorldData.EntityPlayer.AnimManager.StopAnimation("sitflooridle");
 
             // Set player's status to not sitting
-            PlayerManager.Instance.GetPlayerData(byPlayer).TogglePlayerSitting();
+            PlayerManager.Instance.GetOrAddPlayerData(byPlayer).TogglePlayerSitting();
         }
     }
 }

@@ -17,7 +17,7 @@ namespace AculemMods {
             get { return instance; }
         }
 
-        public PlayerData GetPlayerData(IPlayer player) {
+        public PlayerData GetOrAddPlayerData(IPlayer player) {
 
             string playerUID = player.PlayerUID;
 
@@ -30,12 +30,6 @@ namespace AculemMods {
             playerList.Add(newPlayerData);
 
             return newPlayerData;
-        }
-
-        public void AddPlayer(IPlayer playerToAdd) {
-
-            string playerUID = playerToAdd.PlayerUID;
-            playerList.Add(new PlayerData(playerUID));
         }
     }
 }

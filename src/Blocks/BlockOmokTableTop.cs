@@ -68,7 +68,7 @@ namespace AculemMods {
                 }
 
                 // Store Selected Omok Board Position
-                PlayerData playerData = PlayerManager.Instance.GetPlayerData(byPlayer);
+                PlayerData playerData = PlayerManager.Instance.GetOrAddPlayerData(byPlayer);
                 playerData.SelectedOmokBoardPos = blockPos;
 
                 renderer.LoadAvailableMovesMesh(cAPI, byPlayer, blockSel.Position, pieceX, pieceZ);
@@ -130,6 +130,7 @@ namespace AculemMods {
             AssetLocation placeSound = new AssetLocation("game:sounds/block/loosestone" + random);
             world.PlaySoundAt(placeSound, blockPos.X, blockPos.Y, blockPos.Z, byPlayer, true, 10, 1);
 
+            /*
             // Reload Available Moves Mesh
             if (world.Side == EnumAppSide.Client) {
                 
@@ -144,7 +145,8 @@ namespace AculemMods {
 
                 renderer.LoadAvailableMovesMesh(cAPI, byPlayer, blockSel.Position, -1, -1);
             }
-            
+            */
+
             if (world.Side == EnumAppSide.Server) {
 
                 ICoreServerAPI sAPI = (ICoreServerAPI)api;
@@ -155,6 +157,7 @@ namespace AculemMods {
             }
 
             beOmok.MarkDirty(true);
+            beOmok.UpdateClients();
 
             return true;
         }
