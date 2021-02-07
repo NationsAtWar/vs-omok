@@ -11,8 +11,12 @@ namespace AculemMods {
     public class Omok : ModSystem {
 
         PlayerManager playerManager;
-        private ICoreServerAPI serverAPI;
+
         private ICoreClientAPI clientAPI;
+        IClientNetworkChannel clientChannel;
+
+        private ICoreServerAPI serverAPI;
+        IServerNetworkChannel serverChannel;
 
         public override void Start(ICoreAPI api) {
 
@@ -35,6 +39,13 @@ namespace AculemMods {
 
             serverAPI = api;
             serverAPI.Event.PlayerJoin += OnPlayerJoinServer;
+
+            serverChannel =
+                api.Network.RegisterChannel("networksit")
+                .RegisterMessageType(typeof(NetworkAnimationSit))
+                .SetMessageHandler<NetworkAnimationSit>(OnClientMessage)
+                ;
+            ;
         }
 
         public override void StartClientSide(ICoreClientAPI api) {
@@ -44,6 +55,48 @@ namespace AculemMods {
             clientAPI.Event.MouseMove += OnMouseMove;
             clientAPI.Event.KeyDown += OnKeyDown;
             clientAPI.Event.PlayerJoin += OnPlayerJoinClient;
+
+            clientChannel =
+                api.Network.RegisterChannel("networksit")
+                .RegisterMessageType(typeof(NetworkAnimationSit))
+                .SetMessageHandler<NetworkAnimationSit>(OnServerMessage)
+            ;
+        }
+
+        private void OnServerMessage(NetworkAnimationSit networkMessage) {
+
+            IPlayer sittingPlayer = clientAPI.World.PlayerByUid(networkMessage.playerUID);
+
+            if (sittingPlayer == null)
+                return;
+
+            clientAPI.Logger.Debug("Client: " + sittingPlayer.PlayerName + " is sitting: " + networkMessage.isSitting);
+
+            if (networkMessage.isSitting) {
+
+                AnimationMetaData data = new AnimationMetaData() { Animation = "sitflooridle", Code = "sitflooridle", AnimationSpeed = 1.0f, BlendMode = EnumAnimationBlendMode.Add, SupressDefaultAnimation = true, EaseOutSpeed = 10000, EaseInSpeed = 10000 }.Init();
+                sittingPlayer.Entity.AnimManager.StartAnimation(data);
+            } else
+                sittingPlayer.Entity.AnimManager.StopAnimation("sitflooridle");
+        }
+
+        private void OnClientMessage(IPlayer fromPlayer, NetworkAnimationSit networkMessage) {
+            
+            serverAPI.Logger.Debug("Server: " + fromPlayer.PlayerName + " is sitting: " + networkMessage.isSitting);
+
+            if (networkMessage.isSitting) {
+
+                AnimationMetaData data = new AnimationMetaData() { Animation = "sitflooridle", Code = "sitflooridle", AnimationSpeed = 1.0f, BlendMode = EnumAnimationBlendMode.Add, SupressDefaultAnimation = true, EaseOutSpeed = 10000, EaseInSpeed = 10000 }.Init();
+                fromPlayer.Entity.AnimManager.StartAnimation(data);
+                fromPlayer.Entity.AnimManager.AnimationsDirty = true;
+
+            } else {
+
+                fromPlayer.Entity.AnimManager.StopAnimation("sitflooridle");
+                fromPlayer.Entity.AnimManager.AnimationsDirty = true;
+            }
+
+            serverChannel.BroadcastPacket(new NetworkAnimationSit() { isSitting = networkMessage.isSitting, playerUID = networkMessage.playerUID });
         }
 
         private void OnPlayerJoinServer(IServerPlayer byPlayer) {

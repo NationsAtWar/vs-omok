@@ -9,7 +9,7 @@ namespace AculemMods {
 
     public class BlockOmokTableTop : Block {
 
-        private ICoreAPI api;
+        private new ICoreAPI api;
 
         private WorldInteraction helpBlacksTurn;
         private WorldInteraction helpWhitesTurn;
@@ -50,7 +50,9 @@ namespace AculemMods {
         // Loads all available moves
         public override void OnBeingLookedAt(IPlayer byPlayer, BlockSelection blockSel, bool firstTick) {
 
-            if (api is ICoreClientAPI cAPI) {
+            if (api.Side == EnumAppSide.Client) {
+
+                ICoreClientAPI cAPI = (ICoreClientAPI)api;
 
                 BlockPos blockPos = blockSel.Position;
                 BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(blockPos);
@@ -130,23 +132,6 @@ namespace AculemMods {
             AssetLocation placeSound = new AssetLocation("game:sounds/block/loosestone" + random);
             world.PlaySoundAt(placeSound, blockPos.X, blockPos.Y, blockPos.Z, byPlayer, true, 10, 1);
 
-            /*
-            // Reload Available Moves Mesh
-            if (world.Side == EnumAppSide.Client) {
-                
-                RendererOmok renderer = beOmok.OmokRenderer;
-
-                ICoreClientAPI cAPI = (ICoreClientAPI) api;
-
-                if (whitesTurn)
-                    renderer.LoadPlacedMovesMesh(cAPI, beOmok.PlacedWhitePieces, true);
-                else
-                    renderer.LoadPlacedMovesMesh(cAPI, beOmok.PlacedBlackPieces, false);
-
-                renderer.LoadAvailableMovesMesh(cAPI, byPlayer, blockSel.Position, -1, -1);
-            }
-            */
-
             if (world.Side == EnumAppSide.Server) {
 
                 ICoreServerAPI sAPI = (ICoreServerAPI)api;
@@ -178,26 +163,25 @@ namespace AculemMods {
 
         public override WorldInteraction[] GetPlacedBlockInteractionHelp(IWorldAccessor world, BlockSelection selection, IPlayer forPlayer) {
 
-            if (api is ICoreClientAPI cAPI) {
+            if (api is ICoreClientAPI) {
 
                 BlockPos blockPos = selection.Position;
-                BEOmokTableTop beOmok = (BEOmokTableTop)cAPI.World.BlockAccessor.GetBlockEntity(blockPos);
 
-                // Display helpful text over the board
-                if (beOmok == null)
-                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer);
+                if (world.BlockAccessor.GetBlockEntity(blockPos) is BEOmokTableTop beOmok) {
 
-                else if (beOmok.GameIsOver && beOmok.WhiteWon)
-                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhiteWon);
+                    // Display helpful text over the board
+                    if (beOmok.GameIsOver && beOmok.WhiteWon)
+                        return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhiteWon);
 
-                else if (beOmok.GameIsOver && !beOmok.WhiteWon)
-                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlackWon);
+                    else if (beOmok.GameIsOver && !beOmok.WhiteWon)
+                        return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlackWon);
 
-                else if (beOmok.WhitesTurn)
-                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhitesTurn);
+                    else if (beOmok.WhitesTurn)
+                        return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpWhitesTurn);
 
-                else if (!beOmok.WhitesTurn)
-                    return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlacksTurn);
+                    else if (!beOmok.WhitesTurn)
+                        return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer).Append<WorldInteraction>(helpBlacksTurn);
+                }
             }
 
             return base.GetPlacedBlockInteractionHelp(world, selection, forPlayer);

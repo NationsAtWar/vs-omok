@@ -36,6 +36,9 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\libraries\0Harmony.dll</HintPath>
     </Reference>
+    <Reference Include="protobuf-net, Version=2.1.0.0, Culture=neutral, PublicKeyToken=257b51d87d2e4d67, processorArchitecture=MSIL">
+      <HintPath>..\..\packages\protobuf-net.2.1.0\lib\net451\protobuf-net.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Xml.Linq" />
@@ -77,12 +80,14 @@
     <Compile Include="src\GUI\GUIDialogOmokTable.cs" />
     <Compile Include="src\Managers\PlayerData.cs" />
     <Compile Include="src\Managers\PlayerManager.cs" />
+    <Compile Include="src\Network\NetworkAnimation.cs" />
     <Compile Include="src\Omok.cs" />
     <Compile Include="src\Renderers\RendererOmok.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="assets\omok\blocktypes\blockomoktabletop.json" />
     <None Include="assets\omok\lang\en.json" />
+    <None Include="packages.config" />
     <None Include="releases\omok_v0.2.0.zip" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

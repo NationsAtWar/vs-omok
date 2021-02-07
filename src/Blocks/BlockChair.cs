@@ -6,6 +6,9 @@ namespace AculemMods {
 
     public class BlockChair : Block {
 
+        private static readonly double DEFAULTEYEHEIGHT = 1.7d;
+        private static readonly double SITTINGEYEHEIGHT = 1.3d;
+
         readonly PlayerManager playerManager = PlayerManager.Instance;
 
         public override void OnLoaded(ICoreAPI api) {
@@ -22,7 +25,7 @@ namespace AculemMods {
             else
                 PlayerSitDown(world, byPlayer, blockSel.Position);
 
-            return base.OnBlockInteractStart(world, byPlayer, blockSel);
+            return false;
         }
 
         public override void OnBlockPlaced(IWorldAccessor world, BlockPos blockPos, ItemStack byItemStack = null) {
@@ -49,16 +52,19 @@ namespace AculemMods {
             Vec3d centerOfChair = chairPosition.ToVec3d().Add(0.5, 0.5, 0.5);
             byPlayer.Entity.Pos.SetPos(centerOfChair);
 
-            // Apply sitting animation
-            AnimationMetaData data = new AnimationMetaData { Animation = "sitflooridle", Code = "sitflooridle", AnimationSpeed = 1.0f };
-            byPlayer.WorldData.EntityPlayer.AnimManager.StartAnimation(data);
-
             // Set player's status to sitting
             playerData.TogglePlayerSitting();
             playerData.SatChairPos = chairPosition;
 
             // If there is a table next to chair, set player to face chair
             BlockPos adjacentTable = GetAdjacentTable(world, chairPosition);
+
+            // Send packet to server to sync all clients
+            IClientNetworkChannel networkChannel = (IClientNetworkChannel)api.Network.GetChannel("networksit");
+            networkChannel.SendPacket(new NetworkAnimationSit() { isSitting = true, playerUID = byPlayer.PlayerUID });
+
+            // Modify eye height
+            byPlayer.Entity.Properties.SetEyeHeight(SITTINGEYEHEIGHT);
 
             // Set player's sitting direction
             if (adjacentTable != null) {
@@ -107,9 +113,15 @@ namespace AculemMods {
 
         private void PlayerStandUp(IPlayer byPlayer) {
 
-            // Cancel sitting animation
-            //byPlayer.Entity.AnimManager.StopAnimation("sitflooridle");
-            byPlayer.WorldData.EntityPlayer.AnimManager.StopAnimation("sitflooridle");
+            // Modify eye height
+            byPlayer.Entity.Properties.SetEyeHeight(DEFAULTEYEHEIGHT);
+
+            // Set sitting direction to something not used
+            playerManager.GetOrAddPlayerData(byPlayer).SetSittingDirection(Cardinal.SouthWest);
+
+            // Send packet to server to sync all clients
+            IClientNetworkChannel networkChannel = (IClientNetworkChannel)api.Network.GetChannel("networksit");
+            networkChannel.SendPacket(new NetworkAnimationSit() { isSitting = false, playerUID = byPlayer.PlayerUID });
 
             // Set player's status to not sitting
             PlayerManager.Instance.GetOrAddPlayerData(byPlayer).TogglePlayerSitting();
