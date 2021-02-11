@@ -1,11 +1,12 @@
 # Vintage Story - Omok
 Adding functionality to Omok blocks
 
-WORK IN PROGRESS
-Just put the zip in the releases folder into your Vintage Story mods folder
+Just put the zip in the releases tab into your Vintage Story mods folder
 
-Right now the only Omok block with functionality is in a new block, the only way to get it is through creative mode. Just search for 'omok', it's the block with a top-down texture.
+Adds functionality to chair and Omok blocks. Right click on chairs to sit on them. If they're adjacent to a table, your character's orientation will be locked to the table.
 
-Sneak click to place it, then right click the empty spots on the board to place pieces.
+Right click on Omok boards to place pieces. First player to get five in a row wins. You can set a single player or two player game by using tool select mode (Default: 'F')
 
-This is an alpha version, I'll continue to update it throughout the week. Let me know if it works on multiplayer servers yet.
+0.4.0 is the most recent stable release. No known bugs. There are plans to add Go in the future.
+
+Enjoy!
